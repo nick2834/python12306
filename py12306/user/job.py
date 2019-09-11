@@ -15,10 +15,6 @@ from py12306.helpers.type import UserType
 from py12306.log.order_log import OrderLog
 from py12306.log.user_log import UserLog
 from py12306.log.common_log import CommonLog
-PATH = lambda p: os.path.abspath(
-    os.path.join(os.path.dirname(__file__), p)
-)
-CHROME_PATH = PATH('../chromedriver')
 
 class UserJob:
     # heartbeat = 60 * 2  # 心跳保持时长
@@ -185,7 +181,7 @@ class UserJob:
         :return:
         """
         print("cookie获取中")
-        driver = webdriver.Chrome(executable_path=CHROME_PATH)
+        driver = webdriver.Chrome(executable_path=Config.CONFIG_FILE.CHROME_PATH)
         driver.get("https://www.12306.cn/index/index.html")
         time.sleep(10)
 

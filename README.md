@@ -1,9 +1,10 @@
 # 🚂 py12306 购票助手
-感谢大佬
-基于[https://github.com/pjialin](pjialin)购票助手基础上修改 [https://github.com/pjialin/py12306](https://github.com/pjialin/py12306) 十分感谢！
+❤️感谢大佬[pjialin](https://github.com/pjialin)❤️
+
+基于购票助手[https://github.com/pjialin/py12306](https://github.com/pjialin/py12306)基础上修改 ❤️十分感谢！
 
 ## Features
-- [✅] 修复12306更新导致device_id丢失 而不能重新登录
+- [x] 修复12306更新导致device_id丢失 而不能重新登录
 
 
 分布式，多账号，多任务购票
@@ -150,8 +151,6 @@ docker-compose up -d
 
 ### 关于防封
 目前查询和登录操作是分开的，查询是不依赖用户是否登录，放在 A 云 T 云容易被限制 ip，建议在其它网络环境下运行
-
-交流群 [274781597](http://shang.qq.com/wpa/qunwpa?idkey=8eab0b6402096266a62263c1cd452149926adb5cba7a2b7a98a5adc65869addf)
 
 ### Online IDE
 [![在 Gitpod 中打开](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io#https://github.com/nick2834/python12306)
