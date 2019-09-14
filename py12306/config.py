@@ -10,6 +10,10 @@ from py12306.helpers.func import *
 @singleton
 class Config:
     IS_DEBUG = False
+    # 需配置chromeDriver路径,下载地址http://chromedriver.storage.googleapis.com/index.html
+    # chromedriver配置版本只要和chrome的大版本匹配就行
+    # CHROME_PATH = "/Users/nico/Downloads/chromedriver"
+    CHROME_PATH = '../chromedriver'
 
     USER_ACCOUNTS = []
     # 查询任务

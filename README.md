@@ -3,13 +3,10 @@
 
 基于购票助手[https://github.com/pjialin/py12306](https://github.com/pjialin/py12306)基础上修改 ❤️十分感谢！
 
-## Features
-- [x] 修复12306更新导致device_id丢失 而不能重新登录
-
-
 分布式，多账号，多任务购票
 
 ## Features
+- [x] 修复12306更新导致device_id丢失 而不能重新登录
 - [x] 多日期查询余票
 - [x] 自动打码下单
 - [x] 用户状态恢复

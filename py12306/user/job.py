@@ -15,6 +15,8 @@ from py12306.helpers.type import UserType
 from py12306.log.order_log import OrderLog
 from py12306.log.user_log import UserLog
 from py12306.log.common_log import CommonLog
+from py12306.config import Config
+
 
 class UserJob:
     # heartbeat = 60 * 2  # 心跳保持时长
@@ -72,9 +74,11 @@ class UserJob:
             if Config().is_slave():
                 self.load_user_from_remote()
             else:
-                if Config().is_master() and not self.cookie: self.load_user_from_remote()  # 主节点加载一次 Cookie
+                if Config().is_master() and not self.cookie:
+                    self.load_user_from_remote()  # 主节点加载一次 Cookie
                 self.check_heartbeat()
-            if Const.IS_TEST: return
+            if Const.IS_TEST:
+                return
             stay_second(self.check_interval)
 
     def check_heartbeat(self):
@@ -83,10 +87,12 @@ class UserJob:
             return True
         # 只有主节点才能走到这
         if self.is_first_time() or not self.check_user_is_login():
-            if not self.handle_login(): return
+            if not self.handle_login():
+                return
 
         self.user_did_load()
-        message = UserLog.MESSAGE_USER_HEARTBEAT_NORMAL.format(self.get_name(), Config().USER_HEARTBEAT_INTERVAL)
+        message = UserLog.MESSAGE_USER_HEARTBEAT_NORMAL.format(
+            self.get_name(), Config().USER_HEARTBEAT_INTERVAL)
         UserLog.add_quick_log(message).flush()
 
     def get_last_heartbeat(self):
@@ -108,7 +114,8 @@ class UserJob:
         return not path.exists(self.get_cookie_path())
 
     def handle_login(self, expire=False):
-        if expire: UserLog.print_user_expired()
+        if expire:
+            UserLog.print_user_expired()
         self.is_ready = False
         UserLog.print_start_login(user=self)
         return self.login()
@@ -142,7 +149,8 @@ class UserJob:
         elif result.get('result_code') == 2:  # 账号之内错误
             # 登录失败，用户名或密码为空
             # 密码输入错误
-            UserLog.add_quick_log(UserLog.MESSAGE_LOGIN_FAIL.format(result.get('result_message'))).flush()
+            UserLog.add_quick_log(UserLog.MESSAGE_LOGIN_FAIL.format(
+                result.get('result_message'))).flush()
         else:
             UserLog.add_quick_log(
                 UserLog.MESSAGE_LOGIN_FAIL.format(result.get('result_message', result.get('message',
@@ -156,12 +164,14 @@ class UserJob:
         if is_login:
             self.save_user()
             self.set_last_heartbeat()
-            return self.get_user_info()  # 检测应该是不会维持状态，这里再请求下个人中心看有没有用，01-10 看来应该是没用  01-22 有时拿到的状态 是已失效的再加上试试
+            # 检测应该是不会维持状态，这里再请求下个人中心看有没有用，01-10 看来应该是没用  01-22 有时拿到的状态 是已失效的再加上试试
+            return self.get_user_info()
 
         return is_login
 
     def auth_uamtk(self):
-        response = self.session.post(API_AUTH_UAMTK.get('url'), {'appid': 'otn'})
+        response = self.session.post(
+            API_AUTH_UAMTK.get('url'), {'appid': 'otn'})
         result = response.json()
         if result.get('newapptk'):
             return result.get('newapptk')
@@ -169,33 +179,32 @@ class UserJob:
         return False
 
     def auth_uamauthclient(self, tk):
-        response = self.session.post(API_AUTH_UAMAUTHCLIENT.get('url'), {'tk': tk})
+        response = self.session.post(
+            API_AUTH_UAMAUTHCLIENT.get('url'), {'tk': tk})
         result = response.json()
         if result.get('username'):
             return result.get('username')
         # TODO 处理获取失败情况
         return False
-        
+
     def request_device_id(self):
         """
         :return:
         """
         print("cookie获取中")
-        driver = webdriver.Chrome(executable_path=Config.CONFIG_FILE.CHROME_PATH)
+        driver = webdriver.Chrome(
+            executable_path=Config().CHROME_PATH)
         driver.get("https://www.12306.cn/index/index.html")
         time.sleep(10)
 
         for c in driver.get_cookies():
             print()
-            if c.get('name') == 'RAIL_EXPIRATION':
-                self.session.cookies.update({
-                    'RAIL_EXPIRATION': c.get('value')
-                })
-            if c.get('name') == 'RAIL_DEVICEID':
-                self.session.cookies.update({
-                    'RAIL_DEVICEID': c.get('value')
-                })
-        print("cookie获取完成")
+            cookie = dict()
+            if c.get("name") == "RAIL_DEVICEID" or c.get("name") == "RAIL_EXPIRATION":
+                cookie[c.get('name')] = c.get('value')
+                # print(f"获取cookie: {cookie}")
+            self.session.cookies.update(cookie)
+        # print("cookie获取完成")
 
     def request_alg_id(self):
         response = self.session.get("https://kyfw.12306.cn/otn/HttpZF/GetJS")
@@ -301,7 +310,8 @@ class UserJob:
 
     def _encode_data_str(self, data_str):
         data_str_len = len(data_str)
-        data_str_len_tmp = int(data_str_len / 3) if data_str_len % 3 == 0 else int(data_str_len / 3) + 1
+        data_str_len_tmp = int(
+            data_str_len / 3) if data_str_len % 3 == 0 else int(data_str_len / 3) + 1
         if data_str_len >= 3:
             data_str_e = data_str[0:data_str_len_tmp]
             data_str_f = data_str[data_str_len_tmp:2 * data_str_len_tmp]
@@ -318,7 +328,8 @@ class UserJob:
     def _encode_string(self, str):
         import hashlib
         import base64
-        result = base64.b64encode(hashlib.sha256(str.encode()).digest()).decode()
+        result = base64.b64encode(
+            hashlib.sha256(str.encode()).digest()).decode()
         return result.replace('+', '-').replace('/', '_').replace('=', '')
 
     def login_did_success(self):
@@ -358,13 +369,16 @@ class UserJob:
         恢复用户成功
         :return:
         """
-        UserLog.add_quick_log(UserLog.MESSAGE_LOADED_USER.format(self.user_name)).flush()
+        UserLog.add_quick_log(
+            UserLog.MESSAGE_LOADED_USER.format(self.user_name)).flush()
         if self.check_user_is_login() and self.get_user_info():
-            UserLog.add_quick_log(UserLog.MESSAGE_LOADED_USER_SUCCESS.format(self.user_name)).flush()
+            UserLog.add_quick_log(
+                UserLog.MESSAGE_LOADED_USER_SUCCESS.format(self.user_name)).flush()
             UserLog.print_welcome_user(self)
             self.user_did_load()
         else:
-            UserLog.add_quick_log(UserLog.MESSAGE_LOADED_USER_BUT_EXPIRED).flush()
+            UserLog.add_quick_log(
+                UserLog.MESSAGE_LOADED_USER_BUT_EXPIRED).flush()
             self.set_last_heartbeat(0)
 
     def user_did_load(self):
@@ -373,7 +387,8 @@ class UserJob:
         :return:
         """
         self.is_ready = True
-        if self.user_loaded: return
+        if self.user_loaded:
+            return
         self.user_loaded = True
         Event().user_loaded({'key': self.key})  # 发布通知
 
@@ -383,13 +398,15 @@ class UserJob:
         user_data = result.get('data.userDTO.loginUserDTO')
         # 子节点访问会导致主节点登录失效 TODO 可快考虑实时同步 cookie
         if user_data:
-            self.update_user_info({**user_data, **{'user_name': user_data.get('name')}})
+            self.update_user_info(
+                {**user_data, **{'user_name': user_data.get('name')}})
             self.save_user()
             return True
         return False
 
     def load_user(self):
-        if Config().is_cluster_enabled(): return
+        if Config().is_cluster_enabled():
+            return
         cookie_path = self.get_cookie_path()
 
         if path.exists(cookie_path):
@@ -406,10 +423,12 @@ class UserJob:
         info = self.cluster.get_user_info(self.key)
         if Config().is_slave() and (not cookie or not info):
             while True:  # 子节点只能取
-                UserLog.add_quick_log(UserLog.MESSAGE_USER_COOKIE_NOT_FOUND_FROM_REMOTE.format(self.user_name)).flush()
+                UserLog.add_quick_log(
+                    UserLog.MESSAGE_USER_COOKIE_NOT_FOUND_FROM_REMOTE.format(self.user_name)).flush()
                 stay_second(self.retry_time)
                 return self.load_user_from_remote()
-        if info: self.info = info
+        if info:
+            self.info = info
         if cookie:
             self.session.cookies.update(cookie)
             if not self.cookie:  # 第一次加载
@@ -426,8 +445,10 @@ class UserJob:
         return self.is_ready
 
     def wait_for_ready(self):
-        if self.is_ready: return self
-        UserLog.add_quick_log(UserLog.MESSAGE_WAIT_USER_INIT_COMPLETE.format(self.retry_time)).flush()
+        if self.is_ready:
+            return self
+        UserLog.add_quick_log(
+            UserLog.MESSAGE_WAIT_USER_INIT_COMPLETE.format(self.retry_time)).flush()
         stay_second(self.retry_time)
         return self.wait_for_ready()
 
@@ -436,7 +457,8 @@ class UserJob:
         退出用户
         :return:
         """
-        UserLog.add_quick_log(UserLog.MESSAGE_USER_BEING_DESTROY.format(self.user_name)).flush()
+        UserLog.add_quick_log(
+            UserLog.MESSAGE_USER_BEING_DESTROY.format(self.user_name)).flush()
         self.is_alive = False
 
     def response_login_check(self, response, **kwargs):
@@ -444,14 +466,16 @@ class UserJob:
             self.handle_login(expire=True)
 
     def get_user_passengers(self):
-        if self.passengers: return self.passengers
+        if self.passengers:
+            return self.passengers
         response = self.session.post(API_USER_PASSENGERS)
         result = response.json()
         if result.get('data.normal_passengers'):
             self.passengers = result.get('data.normal_passengers')
             # 将乘客写入到文件
             with open(Config().USER_PASSENGERS_FILE % self.user_name, 'w', encoding='utf-8') as f:
-                f.write(json.dumps(self.passengers, indent=4, ensure_ascii=False))
+                f.write(json.dumps(self.passengers,
+                                   indent=4, ensure_ascii=False))
             return self.passengers
         else:
             UserLog.add_quick_log(
@@ -479,16 +503,20 @@ class UserJob:
         for member in members:
             is_member_code = is_number(member)
             if not is_member_code:
-                child_check = array_dict_find_by_key_value(results, 'name', member)
+                child_check = array_dict_find_by_key_value(
+                    results, 'name', member)
             if not is_member_code and child_check:
                 new_member = child_check.copy()
                 new_member['type'] = UserType.CHILD
-                new_member['type_text'] = dict_find_key_by_value(UserType.dicts, int(new_member['type']))
+                new_member['type_text'] = dict_find_key_by_value(
+                    UserType.dicts, int(new_member['type']))
             else:
                 if is_member_code:
-                    passenger = array_dict_find_by_key_value(self.passengers, 'code', member)
+                    passenger = array_dict_find_by_key_value(
+                        self.passengers, 'code', member)
                 else:
-                    passenger = array_dict_find_by_key_value(self.passengers, 'passenger_name', member)
+                    passenger = array_dict_find_by_key_value(
+                        self.passengers, 'passenger_name', member)
                 if not passenger:
                     UserLog.add_quick_log(
                         UserLog.MESSAGE_USER_PASSENGERS_IS_INVALID.format(self.user_name, member)).flush()
@@ -518,12 +546,15 @@ class UserJob:
         order = re.search(r'var orderRequestDTO *= *(\{.+\})', html)
         # 系统忙，请稍后重试
         if html.find('系统忙，请稍后重试') != -1:
-            OrderLog.add_quick_log(OrderLog.MESSAGE_REQUEST_INIT_DC_PAGE_FAIL).flush()  # 重试无用，直接跳过
+            OrderLog.add_quick_log(
+                OrderLog.MESSAGE_REQUEST_INIT_DC_PAGE_FAIL).flush()  # 重试无用，直接跳过
             return False
         try:
             self.global_repeat_submit_token = token.groups()[0]
-            self.ticket_info_for_passenger_form = json.loads(form.groups()[0].replace("'", '"'))
-            self.order_request_dto = json.loads(order.groups()[0].replace("'", '"'))
+            self.ticket_info_for_passenger_form = json.loads(
+                form.groups()[0].replace("'", '"'))
+            self.order_request_dto = json.loads(
+                order.groups()[0].replace("'", '"'))
         except:
             pass  # TODO Error
 
